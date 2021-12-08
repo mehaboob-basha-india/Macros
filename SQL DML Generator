@@ -1,0 +1,97 @@
+
+Sub GENERATE_QUERY()
+
+Dim lRow As Long
+Dim lCol As Long
+Dim TableName As String
+Dim COL As Long
+Dim ROW As Long
+Dim COLOR_COL_STR As Integer
+Dim COLOR_INSERT As Integer
+Dim COLOR_DELETE As Integer
+Dim COLOR_UPDATE_COL As Integer
+Dim COLOR_UPDATE_WHERE As Integer
+Dim InsertStmtCOLName As String
+Dim COLUpdateValue As String
+Dim COLValue As String
+Dim SQLStatement As String
+Dim TMP As String
+Dim Quantity As Integer
+Dim ColName As String
+Dim BlnInsert As Boolean
+Dim BlnUpdate As Boolean
+Dim BlnDelete As Boolean
+'Colour coding for generating DML
+COLOR_COL_STR = 47 'PURPLE
+COLOR_INSERT = 14 'GREEN
+COLOR_DELETE = 3 'RED
+COLOR_UPDATE_COL = 6 'YELLOW
+COLOR_UPDATE_WHERE = 33 'BLUE
+
+TableName = ActiveSheet.Name 'Make sure you always give table name as worksheet name
+
+lRow = Cells(Rows.Count, 1).End(xlUp).ROW
+lCol = Cells(1, Columns.Count).End(xlToLeft).Column
+    
+For COL = 1 To lCol
+    InsertStmtCOLName = InsertStmtCOLName & ",[" & Cells(1, COL) & "]"
+Next
+InsertStmtCOLName = "INSERT INTO " & TableName & "(" & Mid(InsertStmtCOLName, 2, Len(InsertStmtCOLName)) & ") VALUES ("
+    
+For ROW = 2 To lRow
+   COLValue = ""
+   COLUpdateValue = ""
+   BlnInsert = False
+   BlnUpdate = False
+   BlnDelete = False
+   For COL = 1 To lCol
+      TMP = Cells(ROW, COL)
+      ColName = Cells(1, COL)
+      If Cells(ROW, COL).Interior.ColorIndex = COLOR_INSERT Then
+         If Cells(1, COL).Interior.ColorIndex = COLOR_COL_STR Then
+            COLValue = COLValue & ",'" & TMP & "'"
+         Else
+            COLValue = COLValue & "," & TMP
+         End If
+         BlnInsert = True
+      ElseIf Cells(ROW, COL).Interior.ColorIndex = COLOR_DELETE Then
+         If Cells(1, COL).Interior.ColorIndex = COLOR_COL_STR Then
+            COLValue = COLValue & " AND " & ColName & "='" & TMP & "'"
+         Else
+            COLValue = COLValue & " AND " & ColName & "=" & TMP
+         End If
+         BlnDelete = True
+      ElseIf Cells(ROW, COL).Interior.ColorIndex = COLOR_UPDATE_WHERE Then
+         If Cells(1, COL).Interior.ColorIndex = COLOR_COL_STR Then
+            COLValue = COLValue & " AND " & ColName & "='" & TMP & "'"
+         Else
+            COLValue = COLValue & " AND " & ColName & "=" & TMP
+         End If
+         BlnUpdate = True
+      ElseIf Cells(ROW, COL).Interior.ColorIndex = COLOR_UPDATE_COL Then
+         If Cells(1, COL).Interior.ColorIndex = COLOR_COL_STR Then
+            COLUpdateValue = COLUpdateValue & "," & ColName & "='" & TMP & "'"
+         Else
+            COLUpdateValue = COLUpdateValue & "," & ColName & "=" & TMP
+         End If
+         BlnUpdate = True
+      End If
+   Next
+
+   SQLStatement = ""
+   If BlnInsert = True Then
+       COLValue = Mid(COLValue, 2, Len(COLValue))
+       SQLStatement = InsertStmtCOLName & COLValue & ")"
+   ElseIf BlnDelete = True Then
+       COLValue = Mid(COLValue, 5, Len(COLValue))
+       SQLStatement = "DELETE FROM " & TableName & " WHERE " & COLValue
+   ElseIf BlnUpdate = True Then
+       COLValue = Mid(COLValue, 5, Len(COLValue))
+       COLUpdateValue = Mid(COLUpdateValue, 2, Len(COLUpdateValue))
+       SQLStatement = "UPDATE " & TableName & " SET " & COLUpdateValue & " WHERE " & COLValue
+   End If
+   Cells(ROW, lCol + 1) = SQLStatement
+   
+Next
+
+End Sub
